@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .database import engine, Base
-from .api import auth, budgets, departments, expenses, users
+from .api import approvals, auth, budgets, departments, expenses, users
 
 
 # ========== 应用生命周期 ==========
@@ -45,6 +45,7 @@ app.include_router(users.router)
 app.include_router(departments.router)
 app.include_router(budgets.router)
 app.include_router(expenses.router)
+app.include_router(approvals.router)
 
 # ========== 健康检查 ==========
 @app.get("/api/v1/health", tags=["系统"])
