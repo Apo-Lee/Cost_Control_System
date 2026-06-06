@@ -9,7 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .database import engine, Base
-from .api import approvals, auth, budgets, departments, expenses, users
+from .middleware.logging import log_requests
+from .utils.exceptions import global_exception_handler
+from .api import approvals, auth, budgets, departments, expenses, reports, users
 
 
 # ========== 应用生命周期 ==========
@@ -29,7 +31,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ========== CORS 中间件 ==========
+# ========== 中间件（后添加的先执行） ==========
+# 请求日志中间件 — 记录每个请求的方法、路径、耗时
+app.middleware("http")(log_requests)
+
+# CORS 中间件 — 允许前端跨域访问
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -37,6 +43,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 全局异常处理 — 统一错误响应格式
+app.add_exception_handler(Exception, global_exception_handler)
 
 
 # ========== 注册路由 ==========
@@ -46,6 +55,7 @@ app.include_router(departments.router)
 app.include_router(budgets.router)
 app.include_router(expenses.router)
 app.include_router(approvals.router)
+app.include_router(reports.router)
 
 # ========== 健康检查 ==========
 @app.get("/api/v1/health", tags=["系统"])
