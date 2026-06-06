@@ -1,0 +1,39 @@
+import axios from 'axios'
+import { ElMessage } from 'element-plus'
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1',
+  timeout: 10000,
+})
+
+// 请求拦截器 — 自动附加 token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error),
+)
+
+// 响应拦截器 — 统一处理错误
+api.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    const msg = error.response?.data?.detail || error.message || '请求失败'
+    ElMessage.error(msg)
+
+    // 401 未认证 → 清除 token 并跳转登录
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    }
+
+    return Promise.reject(error)
+  },
+)
+
+export default api
